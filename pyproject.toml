@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netbox-dns-validator"
+version = "0.1.0"
+description = "NetBox plugin for validating DNS zones against live internet data"
+requires-python = ">=3.10"
+dependencies = [
+    "dnspython>=2.4",
+    "python-whois>=0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-django"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["netbox_dns_validator*"]
