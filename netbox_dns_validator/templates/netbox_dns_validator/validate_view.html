@@ -1,0 +1,33 @@
+{% extends 'base/layout.html' %}
+{% load form_helpers %}
+
+{% block title %}Validate DNS View{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header">Validate a netbox-dns View</h5>
+      <div class="card-body">
+        <p class="text-muted">
+          Select a view to run WHOIS, NS delegation, and resolver checks for
+          every zone it contains. Results are stored and shown on the
+          <a href="{% url 'plugins:netbox_dns_validator:zonevalidation_list' %}">Zone Results</a> page.
+        </p>
+        <form method="post">
+          {% csrf_token %}
+          {% render_form form %}
+          <div class="mt-3">
+            <button type="submit" class="btn btn-primary">
+              <i class="mdi mdi-play"></i> Run Validation
+            </button>
+            <a href="{% url 'plugins:netbox_dns_validator:zonevalidation_list' %}" class="btn btn-outline-secondary ms-2">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

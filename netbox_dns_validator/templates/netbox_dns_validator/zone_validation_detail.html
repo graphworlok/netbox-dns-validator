@@ -1,0 +1,162 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+
+{% block extra_controls %}
+<form method="post" action="{% url 'plugins:netbox_dns_validator:validate_zone' object.zone.pk %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-sm btn-primary">
+    <i class="mdi mdi-refresh"></i> Re-validate
+  </button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+
+  {# ---- Zone summary ---- #}
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header">Zone</h5>
+      <div class="card-body">
+        <table class="table table-hover attr-table">
+          <tr><th>Zone</th><td><a href="{{ object.zone.get_absolute_url }}">{{ object.zone.name }}</a></td></tr>
+          <tr><th>View</th><td>{{ object.zone.view.name|default:"(default)" }}</td></tr>
+          <tr><th>Last Checked</th><td>{{ object.checked_at|default:"Never" }}</td></tr>
+          <tr>
+            <th>Overall Status</th>
+            <td>
+              {% if object.overall_status == 'pass' %}<span class="badge bg-success">Pass</span>
+              {% elif object.overall_status == 'warning' %}<span class="badge bg-warning">Warning</span>
+              {% elif object.overall_status == 'fail' %}<span class="badge bg-danger">Fail</span>
+              {% else %}<span class="badge bg-secondary">Unknown</span>{% endif %}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ---- WHOIS ---- #}
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header d-flex justify-content-between align-items-center">
+        WHOIS
+        {% if object.whois_status == 'pass' %}<span class="badge bg-success">Pass</span>
+        {% elif object.whois_status == 'warning' %}<span class="badge bg-warning">Warning</span>
+        {% elif object.whois_status == 'fail' %}<span class="badge bg-danger">Fail</span>
+        {% else %}<span class="badge bg-secondary">Unknown</span>{% endif %}
+      </h5>
+      <div class="card-body">
+        {% if object.whois_error %}
+          <div class="alert alert-danger">{{ object.whois_error }}</div>
+        {% else %}
+          <table class="table table-hover attr-table">
+            <tr><th>Registrar</th><td>{{ object.whois_registrar|default:"—" }}</td></tr>
+            <tr><th>Expiry</th><td>{{ object.whois_expiry|default:"—" }}</td></tr>
+            <tr>
+              <th>EPP Statuses</th>
+              <td>
+                {% for s in object.whois_epp_statuses %}
+                  {% if s == 'clientTransferProhibited' or s == 'serverTransferProhibited' %}
+                    <span class="badge bg-success">{{ s }}</span>
+                  {% elif s == 'pendingDelete' or s == 'redemptionPeriod' or s == 'serverHold' or s == 'clientHold' %}
+                    <span class="badge bg-danger">{{ s }}</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ s }}</span>
+                  {% endif %}
+                {% empty %}—{% endfor %}
+              </td>
+            </tr>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ---- NS Delegation ---- #}
+  <div class="col-md-6">
+    <div class="card mt-3">
+      <h5 class="card-header d-flex justify-content-between align-items-center">
+        NS Delegation
+        {% if object.ns_status == 'pass' %}<span class="badge bg-success">Pass</span>
+        {% elif object.ns_status == 'warning' %}<span class="badge bg-warning">Warning</span>
+        {% elif object.ns_status == 'fail' %}<span class="badge bg-danger">Fail</span>
+        {% else %}<span class="badge bg-secondary">Unknown</span>{% endif %}
+      </h5>
+      <div class="card-body">
+        {% if object.ns_error %}
+          <div class="alert alert-danger">{{ object.ns_error }}</div>
+        {% endif %}
+        <table class="table table-hover attr-table">
+          <tr>
+            <th>Delegated (internet)</th>
+            <td>
+              {% for ns in object.ns_delegated %}<code>{{ ns }}</code><br>{% empty %}—{% endfor %}
+            </td>
+          </tr>
+          <tr>
+            <th>Configured (netbox-dns)</th>
+            <td>
+              {% for ns in object.ns_configured %}<code>{{ ns }}</code><br>{% empty %}—{% endfor %}
+            </td>
+          </tr>
+          {% if object.ns_missing %}
+          <tr>
+            <th>In netbox-dns, not delegated</th>
+            <td>
+              {% for ns in object.ns_missing %}<span class="badge bg-warning text-dark">{{ ns }}</span> {% endfor %}
+            </td>
+          </tr>
+          {% endif %}
+          {% if object.ns_extra %}
+          <tr>
+            <th>Delegated, not in netbox-dns</th>
+            <td>
+              {% for ns in object.ns_extra %}<span class="badge bg-info">{{ ns }}</span> {% endfor %}
+            </td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ---- Resolver / Authoritative ---- #}
+  <div class="col-md-6">
+    <div class="card mt-3">
+      <h5 class="card-header d-flex justify-content-between align-items-center">
+        Resolvers / Authoritative
+        {% if object.resolver_status == 'pass' %}<span class="badge bg-success">Pass</span>
+        {% elif object.resolver_status == 'warning' %}<span class="badge bg-warning">Warning</span>
+        {% elif object.resolver_status == 'fail' %}<span class="badge bg-danger">Fail</span>
+        {% else %}<span class="badge bg-secondary">Unknown</span>{% endif %}
+      </h5>
+      <div class="card-body">
+        {% if object.resolver_error %}
+          <div class="alert alert-danger">{{ object.resolver_error }}</div>
+        {% endif %}
+        <table class="table table-sm table-hover">
+          <thead><tr><th>Nameserver</th><th>IP</th><th>Auth?</th><th>SOA Serial</th><th>Error</th></tr></thead>
+          <tbody>
+            {% for ns, r in object.resolver_results.items %}
+            <tr>
+              <td><code>{{ ns }}</code></td>
+              <td>{{ r.ip|default:"—" }}</td>
+              <td>
+                {% if r.ok %}<span class="badge bg-success">Yes</span>
+                {% else %}<span class="badge bg-danger">No</span>{% endif %}
+              </td>
+              <td>{{ r.serial|default:"—" }}</td>
+              <td class="text-danger">{{ r.error }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted">No results yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
