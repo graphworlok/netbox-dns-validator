@@ -44,6 +44,12 @@ class ZoneValidation(NetBoxModel):
         verbose_name="EPP Status Codes",
         help_text="Domain EPP/RDAP status codes from WHOIS (e.g. clientTransferProhibited)",
     )
+    whois_server_used = models.CharField(
+        max_length=256,
+        blank=True,
+        verbose_name="WHOIS Server",
+        help_text="WHOIS server queried (blank = python-whois default for this TLD)",
+    )
     whois_error = models.TextField(blank=True)
 
     # --- NS Delegation ---

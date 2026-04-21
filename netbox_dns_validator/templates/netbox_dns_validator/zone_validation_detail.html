@@ -54,6 +54,17 @@
             <tr><th>Registrar</th><td>{{ object.whois_registrar|default:"—" }}</td></tr>
             <tr><th>Expiry</th><td>{{ object.whois_expiry|default:"—" }}</td></tr>
             <tr>
+              <th>WHOIS Server</th>
+              <td>
+                {% if object.whois_server_used %}
+                  <code>{{ object.whois_server_used }}</code>
+                  <span class="text-muted small">(override)</span>
+                {% else %}
+                  <span class="text-muted">python-whois default</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
               <th>EPP Statuses</th>
               <td>
                 {% for s in object.whois_epp_statuses %}

@@ -19,6 +19,8 @@ def _plugin_setting(key):
     defaults = {
         "public_resolvers": ["8.8.8.8", "1.1.1.1"],
         "query_timeout": 10,
+        "whois_servers": {},
+        "whois_skip_tlds": [],
     }
     return cfg.get(key, defaults[key])
 
@@ -40,6 +42,8 @@ def validate_zone(zone) -> "ZoneValidation":
 
     resolvers = _plugin_setting("public_resolvers")
     timeout = _plugin_setting("query_timeout")
+    whois_servers = _plugin_setting("whois_servers")
+    whois_skip_tlds = _plugin_setting("whois_skip_tlds")
 
     zone_name = zone.name.rstrip(".")
     configured_ns = [ns.name.rstrip(".").lower() for ns in zone.nameservers.all()]
@@ -48,12 +52,20 @@ def validate_zone(zone) -> "ZoneValidation":
 
     # --- WHOIS ---
     logger.info("WHOIS check: %s", zone_name)
-    w = whois_check.check(zone_name, timeout=timeout)
+    w = whois_check.check(
+        zone_name,
+        whois_servers=whois_servers,
+        whois_skip_tlds=whois_skip_tlds,
+        timeout=timeout,
+    )
     validation.whois_registrar = w["registrar"]
     validation.whois_expiry = w["expiry"]
     validation.whois_epp_statuses = w["epp_statuses"]
+    validation.whois_server_used = w.get("server") or ""
     validation.whois_error = w["error"]
-    if not w["ok"]:
+    if w["skipped"]:
+        validation.whois_status = ValidationStatusChoices.UNKNOWN
+    elif not w["ok"]:
         validation.whois_status = ValidationStatusChoices.FAIL
     elif w["warning"]:
         validation.whois_status = ValidationStatusChoices.WARNING
