@@ -6,9 +6,31 @@ from django.views import View
 from netbox.views import generic
 
 from .filters import ZoneValidationFilterSet
-from .forms import ValidateViewForm, ZoneValidationFilterForm
-from .models import ZoneValidation
-from .tables import ZoneValidationTable
+from .forms import TLDWhoisConfigForm, ValidateViewForm, ZoneValidationFilterForm
+from .models import TLDWhoisConfig, ZoneValidation
+from .tables import TLDWhoisConfigTable, ZoneValidationTable
+
+
+# ---------------------------------------------------------------------------
+# TLD WHOIS Config CRUD
+# ---------------------------------------------------------------------------
+
+class TLDWhoisConfigListView(generic.ObjectListView):
+    queryset = TLDWhoisConfig.objects.all()
+    table = TLDWhoisConfigTable
+
+
+class TLDWhoisConfigView(generic.ObjectView):
+    queryset = TLDWhoisConfig.objects.all()
+
+
+class TLDWhoisConfigEditView(generic.ObjectEditView):
+    queryset = TLDWhoisConfig.objects.all()
+    form = TLDWhoisConfigForm
+
+
+class TLDWhoisConfigDeleteView(generic.ObjectDeleteView):
+    queryset = TLDWhoisConfig.objects.all()
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,21 @@
 from django import forms
-from netbox.forms import NetBoxModelFilterSetForm
+from netbox.forms import NetBoxModelFilterSetForm, NetBoxModelForm
 
-from .models import ZoneValidation
+from .models import TLDWhoisConfig, ZoneValidation
 from .choices import ValidationStatusChoices
+
+
+class TLDWhoisConfigForm(NetBoxModelForm):
+    fieldsets = (
+        ("TLD Override", ("tld", "whois_server", "skip", "notes")),
+    )
+
+    class Meta:
+        model = TLDWhoisConfig
+        fields = ("tld", "whois_server", "skip", "notes")
+        help_texts = {
+            "tld": "Suffix without leading dot — use multi-part form for second-level TLDs, e.g. <code>co.uk</code> or <code>com.au</code>",
+        }
 
 
 class ZoneValidationFilterForm(NetBoxModelFilterSetForm):

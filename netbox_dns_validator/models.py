@@ -5,6 +5,45 @@ from netbox.models import NetBoxModel
 from .choices import ValidationStatusChoices
 
 
+class TLDWhoisConfig(NetBoxModel):
+    """
+    Per-TLD WHOIS configuration managed via the GUI.
+
+    Supports multi-part suffixes (e.g. "co.uk", "com.au").
+    DB records take precedence over anything in PLUGINS_CONFIG.
+    """
+
+    tld = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name="TLD Suffix",
+        help_text="Suffix without leading dot, e.g. 'au' or 'co.uk'",
+    )
+    whois_server = models.CharField(
+        max_length=256,
+        blank=True,
+        verbose_name="WHOIS Server",
+        help_text="Override WHOIS server hostname (leave blank to use python-whois default)",
+    )
+    skip = models.BooleanField(
+        default=False,
+        verbose_name="Skip WHOIS",
+        help_text="Do not attempt WHOIS for this TLD — result will show as Unknown",
+    )
+    notes = models.TextField(blank=True, help_text="Optional note explaining this override")
+
+    class Meta:
+        ordering = ["tld"]
+        verbose_name = "TLD WHOIS Config"
+        verbose_name_plural = "TLD WHOIS Configs"
+
+    def __str__(self):
+        return f".{self.tld}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_dns_validator:tldwhoisconfig", args=[self.pk])
+
+
 class ZoneValidation(NetBoxModel):
     """
     Stores the most recent zone-level validation result for a netbox-dns Zone.

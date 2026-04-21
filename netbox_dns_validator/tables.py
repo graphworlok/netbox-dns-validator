@@ -1,7 +1,7 @@
 import django_tables2 as tables
 from netbox.tables import NetBoxTable, columns
 
-from .models import ZoneValidation
+from .models import TLDWhoisConfig, ZoneValidation
 from .choices import ValidationStatusChoices
 
 _BADGE_MAP = {
@@ -19,6 +19,18 @@ class StatusBadgeColumn(tables.Column):
         return tables.utils.mark_safe(
             f'<span class="badge bg-{css}">{label}</span>'
         )
+
+
+class TLDWhoisConfigTable(NetBoxTable):
+    tld = tables.Column(linkify=True, verbose_name="TLD Suffix")
+    whois_server = tables.Column(verbose_name="WHOIS Server Override", default="(default)")
+    skip = columns.BooleanColumn(verbose_name="Skip WHOIS")
+    actions = columns.ActionsColumn(actions=("edit", "delete"))
+
+    class Meta(NetBoxTable.Meta):
+        model = TLDWhoisConfig
+        fields = ("pk", "tld", "whois_server", "skip", "notes", "actions")
+        default_columns = ("tld", "whois_server", "skip", "notes", "actions")
 
 
 class ZoneValidationTable(NetBoxTable):

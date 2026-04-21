@@ -33,6 +33,31 @@ def _status_from_check(ok: bool, warning: bool = False) -> str:
     return ValidationStatusChoices.PASS
 
 
+def _merged_whois_config() -> tuple[dict, list]:
+    """
+    Return (whois_servers, whois_skip_tlds) merged from PLUGINS_CONFIG and DB.
+    DB records take precedence over static config.
+    """
+    from ..models import TLDWhoisConfig
+
+    servers = dict(_plugin_setting("whois_servers"))
+    skip = set(_plugin_setting("whois_skip_tlds"))
+
+    for cfg in TLDWhoisConfig.objects.all():
+        tld = cfg.tld.lstrip(".").lower()
+        if cfg.skip:
+            skip.add(tld)
+            servers.pop(tld, None)
+        else:
+            skip.discard(tld)
+            if cfg.whois_server:
+                servers[tld] = cfg.whois_server
+            else:
+                servers.pop(tld, None)
+
+    return servers, sorted(skip)
+
+
 def validate_zone(zone) -> "ZoneValidation":
     """
     Run all checks for a single netbox-dns Zone instance.
@@ -42,8 +67,7 @@ def validate_zone(zone) -> "ZoneValidation":
 
     resolvers = _plugin_setting("public_resolvers")
     timeout = _plugin_setting("query_timeout")
-    whois_servers = _plugin_setting("whois_servers")
-    whois_skip_tlds = _plugin_setting("whois_skip_tlds")
+    whois_servers, whois_skip_tlds = _merged_whois_config()
 
     zone_name = zone.name.rstrip(".")
     configured_ns = [ns.name.rstrip(".").lower() for ns in zone.nameservers.all()]
